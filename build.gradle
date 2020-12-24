@@ -1,0 +1,104 @@
+buildscript {
+    ext {
+        kotlin_version = "1.4.21"
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    }
+}
+
+plugins {
+    id "com.gradle.plugin-publish" version "0.12.0"
+    id "org.jetbrains.kotlin.jvm" version "$kotlin_version"
+    id "java-gradle-plugin"
+    id "maven"
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+    google()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir("src/main/kotlin")
+        }
+    }
+}
+
+static String getVersion(String type) {
+    def fileInputStream = new FileInputStream(new File("version.properties"))
+    def props = new Properties()
+    props.load(fileInputStream)
+
+    return "${props["${type}.major"]}.${props["${type}.minor"]}.${props["${type}.patch"]}"
+}
+
+gradlePlugin {
+    plugins {
+        projectVersionConfig {
+            id = "com.zambelz.project-versioning"
+            implementationClass = "com.zambelz.projectversioning.ProjectVersioningPlugin"
+        }
+        testLogger {
+            id = "com.zambelz.unit-test-reporter"
+            implementationClass = "com.zambelz.unittestreporter.UnitTestReporterPlugin"
+        }
+    }
+}
+
+pluginBundle {
+    description = "Common gradle utilities plugins"
+    website = "https://zambelz48.github.io"
+    vcsUrl = "https://github.com/zambelz48/common-gradle-utilities"
+
+    plugins {
+        projectVersionConfig {
+            version = getVersion("projectversioning")
+            displayName = "Project versioning plugin"
+            description = "Project versioning using semantic versioning format"
+            tags = ["version", "semver", "semantic versioning"]
+        }
+        testLogger {
+            version = getVersion("testlogger")
+            displayName = "Custom test logger plugin"
+            description = "Custom test logger"
+            tags = ["test", "logging", "test logger"]
+        }
+    }
+
+    mavenCoordinates {
+        groupId = "com.zambelz"
+        artifactId = rootProject.name
+        version = getVersion("main")
+    }
+}
+
+dependencies {
+    implementation gradleApi()
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: mavenLocal().getUrl())
+            pom.groupId = "com.zambelz"
+            pom.artifactId = rootProject.name
+            pom.version = getVersion("main")
+        }
+    }
+}
